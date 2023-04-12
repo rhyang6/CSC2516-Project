@@ -104,7 +104,7 @@ class USNorm(nn.Module):
         if self.norm is None:
             assert self.norm is not None
         else:
-            print(self.norm_type)
+            # print(self.norm_type)
             assert self.norm_type in self.norm_list
             idx = self.norm_list.index(self.norm_type)
 
