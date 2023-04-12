@@ -19,6 +19,8 @@ try:
 except ImportError:
     thop = None
 
+from models.common import BatchNorm
+from models.norm import USNorm
 
 class Detect(nn.Module):
     stride = None  # strides computed during build
@@ -579,6 +581,11 @@ class Model(nn.Module):
         logger.info('')
 
     def forward(self, x, augment=False, profile=False):
+        
+        for name, module in self.named_modules():
+            if isinstance(module, USNorm):
+                module.set_norms_mixed()
+
         if augment:
             img_size = x.shape[-2:]  # height, width
             s = [1, 0.83, 0.67]  # scales
@@ -777,7 +784,8 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
                      ST2CSPA, ST2CSPB, ST2CSPC]:
                 args.insert(2, n)  # number of repeats
                 n = 1
-        elif m is nn.BatchNorm2d:
+        # elif m is nn.BatchNorm2d:
+        elif m is BatchNorm:
             args = [ch[f]]
         elif m is Concat:
             c2 = sum([ch[x] for x in f])
