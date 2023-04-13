@@ -585,6 +585,7 @@ class Model(nn.Module):
         for name, module in self.named_modules():
             if isinstance(module, USNorm):
                 module.set_norms_mixed()
+                # print("Name\t", name, "Norm Type\t", module.norm_type)
 
         if augment:
             img_size = x.shape[-2:]  # height, width
