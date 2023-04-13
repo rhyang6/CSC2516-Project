@@ -596,7 +596,7 @@ class RepConv(nn.Module):
         weight_1x1_expanded = torch.nn.functional.pad(self.rbr_1x1.weight, [1, 1, 1, 1])
         
         # Fuse self.rbr_identity
-        if (isinstance(self.rbr_identity, BatchNorm) or isinstance(self.rbr_identity, nn.modules.batchnorm.SyncBatchNorm)):
+        if (isinstance(self.rbr_identity, USNorm) or isinstance(self.rbr_identity, nn.modules.batchnorm.SyncBatchNorm)):
             # print(f"fuse: rbr_identity == BatchNorm2d or SyncBatchNorm")
             identity_conv_1x1 = nn.Conv2d(
                     in_channels=self.in_channels,
