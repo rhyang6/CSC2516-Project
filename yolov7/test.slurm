@@ -8,6 +8,6 @@
 #SBATCH --output=out_test.log
 #SBATCH --error=err_test.log
 
-source /w/331/zcguan/Random-Norm-Aggregation/venv/bin/activate
+source /w/246/ruihengyang/csc2516/bin/activate
 # python3 train.py --random_norm_training --mixed --network ResNet18 --batch_size 128 --num_group_schedule 0 0 --worker 2 --random_type bn --gn_type gnr --save_dir resnet_c10_RNA
 python3 test.py --data data/coco.yaml --img 640 --batch 32 --conf 0.001 --iou 0.65 --device 0 --weights yolov7.pt --name yolov7_640_val

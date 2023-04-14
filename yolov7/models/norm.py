@@ -41,7 +41,10 @@ class GroupBatchNorm2d(nn.Module):
 
         if self.training:
             self.running_mean.data.copy_((self.momentum * self.running_mean) + (1.0 - self.momentum) * mean)
-            self.running_var.data.copy_((self.momentum * self.running_var) + (1.0 - self.momentum) * (N / (N - 1) * var))
+            if N==1:
+                self.running_var.data.copy_((self.momentum * self.running_var) + (1.0 - self.momentum) * var)
+            else:   
+                self.running_var.data.copy_((self.momentum * self.running_var) + (1.0 - self.momentum) * (N / (N - 1) * var))
         else:
             mean = self.running_mean.data
             var = self.running_var.data
