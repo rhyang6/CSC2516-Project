@@ -18,7 +18,7 @@ from utils.plots import color_list, plot_one_box
 from utils.torch_utils import time_synchronized
 
 from models.norm import USNorm
-BatchNorm = lambda num_features: USNorm(num_features, ['bn', 'in'])
+BatchNorm = lambda num_features: USNorm(num_features, ['in', 'bn'])
 # BatchNorm = nn.BatchNorm2d
 
 ##### basic ####
