@@ -19,8 +19,6 @@ try:
 except ImportError:
     thop = None
 
-from models.common import BatchNorm
-from models.norm import USNorm
 
 class Detect(nn.Module):
     stride = None  # strides computed during build
@@ -75,6 +73,7 @@ class Detect(nn.Module):
             out = torch.cat(z, 1)
         else:
             out = (torch.cat(z, 1), x)
+            # out = torch.cat(z, 1)
 
         return out
 
@@ -581,12 +580,6 @@ class Model(nn.Module):
         logger.info('')
 
     def forward(self, x, augment=False, profile=False):
-        
-        for name, module in self.named_modules():
-            if isinstance(module, USNorm):
-                module.set_norms_mixed()
-                # print("Name\t", name, "Norm Type\t", module.norm_type)
-
         if augment:
             img_size = x.shape[-2:]  # height, width
             s = [1, 0.83, 0.67]  # scales
@@ -631,6 +624,11 @@ class Model(nn.Module):
                 print('%10.1f%10.0f%10.1fms %-40s' % (o, m.np, dt[-1], m.type))
 
             x = m(x)  # run
+
+            # if not torch.is_tensor(x):
+            #     print(f'not a tensor in for loop', x, type(x), m, type(m))
+            #     import sys
+            #     sys.exit()
             
             y.append(x if m.i in self.save else None)  # save output
 
@@ -785,8 +783,7 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
                      ST2CSPA, ST2CSPB, ST2CSPC]:
                 args.insert(2, n)  # number of repeats
                 n = 1
-        # elif m is nn.BatchNorm2d:
-        elif m is BatchNorm:
+        elif m is nn.BatchNorm2d:
             args = [ch[f]]
         elif m is Concat:
             c2 = sum([ch[x] for x in f])

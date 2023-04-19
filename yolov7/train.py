@@ -7,8 +7,6 @@ import time
 from copy import deepcopy
 from pathlib import Path
 from threading import Thread
-import sys
-from torchsummary  import summary
 
 import numpy as np
 import torch.distributed as dist
@@ -36,8 +34,6 @@ from utils.loss import ComputeLoss, ComputeLossOTA
 from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, is_parallel
 from utils.wandb_logging.wandb_utils import WandbLogger, check_wandb_resume
-
-from models.norm import USNorm
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +97,7 @@ def train(hyp, opt, device, tb_writer=None):
         check_dataset(data_dict)  # check
     train_path = data_dict['train']
     test_path = data_dict['val']
-    print(model)
+
     # Freeze
     freeze = [f'model.{x}.' for x in (freeze if len(freeze) > 1 else range(freeze[0]))]  # parameter names to freeze (full or partial)
     for k, v in model.named_parameters():
@@ -311,10 +307,6 @@ def train(hyp, opt, device, tb_writer=None):
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         model.train()
 
-        # for name, module in model.named_modules():
-        #     if isinstance(module, USNorm):
-        #         module.set_norms_mixed()
-        
         # Update image weights (optional)
         if opt.image_weights:
             # Generate indices
@@ -622,6 +614,7 @@ if __name__ == '__main__':
             logger.info(f"{prefix}Start with 'tensorboard --logdir {opt.project}', view at http://localhost:6006/")
             tb_writer = SummaryWriter(opt.save_dir)  # Tensorboard
         train(hyp, opt, device, tb_writer)
+
     # Evolve hyperparameters (optional)
     else:
         # Hyperparameter evolution metadata (mutation scale 0-1, lower_limit, upper_limit)

@@ -17,9 +17,6 @@ from utils.general import non_max_suppression, make_divisible, scale_coords, inc
 from utils.plots import color_list, plot_one_box
 from utils.torch_utils import time_synchronized
 
-from models.norm import USNorm
-BatchNorm = lambda num_features: USNorm(num_features, ['in', 'bn'])
-# BatchNorm = nn.BatchNorm2d
 
 ##### basic ####
 
@@ -104,7 +101,7 @@ class Conv(nn.Module):
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
         super(Conv, self).__init__()
         self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g, bias=False)
-        self.bn = BatchNorm(c2)
+        self.bn = nn.BatchNorm2d(c2)
         self.act = nn.SiLU() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
 
     def forward(self, x):
@@ -486,16 +483,16 @@ class RepConv(nn.Module):
             self.rbr_reparam = nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g, bias=True)
 
         else:
-            self.rbr_identity = (BatchNorm(num_features=c1) if c2 == c1 and s == 1 else None)
+            self.rbr_identity = (nn.BatchNorm2d(num_features=c1) if c2 == c1 and s == 1 else None)
 
             self.rbr_dense = nn.Sequential(
                 nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g, bias=False),
-                BatchNorm(num_features=c2),
+                nn.BatchNorm2d(num_features=c2),
             )
 
             self.rbr_1x1 = nn.Sequential(
                 nn.Conv2d( c1, c2, 1, s, padding_11, groups=g, bias=False),
-                BatchNorm(num_features=c2),
+                nn.BatchNorm2d(num_features=c2),
             )
 
     def forward(self, inputs):
@@ -535,7 +532,7 @@ class RepConv(nn.Module):
             beta = branch[1].bias
             eps = branch[1].eps
         else:
-            assert isinstance(branch, BatchNorm)
+            assert isinstance(branch, nn.BatchNorm2d)
             if not hasattr(self, "id_tensor"):
                 input_dim = self.in_channels // self.groups
                 kernel_value = np.zeros(
@@ -596,7 +593,7 @@ class RepConv(nn.Module):
         weight_1x1_expanded = torch.nn.functional.pad(self.rbr_1x1.weight, [1, 1, 1, 1])
         
         # Fuse self.rbr_identity
-        if (isinstance(self.rbr_identity, USNorm) or isinstance(self.rbr_identity, nn.modules.batchnorm.SyncBatchNorm)):
+        if (isinstance(self.rbr_identity, nn.BatchNorm2d) or isinstance(self.rbr_identity, nn.modules.batchnorm.SyncBatchNorm)):
             # print(f"fuse: rbr_identity == BatchNorm2d or SyncBatchNorm")
             identity_conv_1x1 = nn.Conv2d(
                     in_channels=self.in_channels,
@@ -1052,7 +1049,7 @@ class ConvBN(nn.Module):
         else:
             self.conv = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size,
                                             stride=stride, padding=padding, dilation=dilation, groups=groups, bias=False)
-            self.bn = BatchNorm(num_features=out_channels)
+            self.bn = nn.BatchNorm2d(num_features=out_channels)
 
     def forward(self, x):
         if hasattr(self, 'bn'):
@@ -1146,7 +1143,7 @@ class OREPA_3x3_RepConv(nn.Module):
             self.branch_counter += 1
 
         self.vector = nn.Parameter(torch.Tensor(self.branch_counter, self.out_channels))
-        self.bn = BatchNorm(out_channels)
+        self.bn = nn.BatchNorm2d(out_channels)
 
         self.fre_init()
 
@@ -1257,7 +1254,7 @@ class RepConv_OREPA(nn.Module):
                                       padding=padding, dilation=dilation, groups=groups, bias=True, padding_mode=padding_mode)
 
         else:
-            self.rbr_identity = BatchNorm(num_features=self.in_channels) if self.out_channels == self.in_channels and s == 1 else None
+            self.rbr_identity = nn.BatchNorm2d(num_features=self.in_channels) if self.out_channels == self.in_channels and s == 1 else None
             self.rbr_dense = OREPA_3x3_RepConv(in_channels=self.in_channels, out_channels=self.out_channels, kernel_size=k, stride=s, padding=padding, groups=groups, dilation=1)
             self.rbr_1x1 = ConvBN(in_channels=self.in_channels, out_channels=self.out_channels, kernel_size=1, stride=s, padding=padding_11, groups=groups, dilation=1)
             print('RepVGG Block, identity = ', self.rbr_identity)
@@ -1316,7 +1313,7 @@ class RepConv_OREPA(nn.Module):
     def _fuse_bn_tensor(self, branch):
         if branch is None:
             return 0, 0
-        if not isinstance(branch, BatchNorm):
+        if not isinstance(branch, nn.BatchNorm2d):
             if isinstance(branch, OREPA_3x3_RepConv):
                 kernel = branch.weight_gen()
             elif isinstance(branch, ConvBN):
